@@ -19,6 +19,12 @@ const latest = context.window.CPP_COURSES.filter(c => c.video).at(-1);
       await new Promise(resolve => setTimeout(resolve, 15000));
     }
     assert(deployed, 'Newest lesson video has not deployed');
+    await page.evaluate(() => {
+      const v = document.getElementById('lessonVideo');
+      v.addEventListener('error', () => console.error('video error', v.error?.code, v.error?.message));
+      v.preload = 'auto';
+      v.load();
+    });
     await page.waitForFunction(() => {
       const v = document.getElementById('lessonVideo');
       return v && v.readyState >= 2 && Number.isFinite(v.duration) && v.duration > 0;
