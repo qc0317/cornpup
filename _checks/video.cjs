@@ -11,7 +11,14 @@ const latest = context.window.CPP_COURSES.filter(c => c.video).at(-1);
     const page = await browser.newPage();
     page.on('console', msg => console.log('browser:', msg.text()));
     const url = `https://qc0317.github.io/cornpup/lessons/lesson-${latest.id}.html?check=${process.env.CHECK_SHA}`;
-    await page.goto(url, {waitUntil: 'domcontentloaded', timeout: 60000});
+    let deployed = false;
+    for (let attempt = 0; attempt < 20; attempt++) {
+      await page.goto(url + `&attempt=${attempt}`, {waitUntil: 'domcontentloaded', timeout: 60000});
+      const src = await page.evaluate(() => document.getElementById('lessonVideo')?.getAttribute('src'));
+      if (src === latest.video) { deployed = true; break; }
+      await new Promise(resolve => setTimeout(resolve, 15000));
+    }
+    assert(deployed, 'Newest lesson video has not deployed');
     await page.waitForFunction(() => {
       const v = document.getElementById('lessonVideo');
       return v && v.readyState >= 2 && Number.isFinite(v.duration) && v.duration > 0;
