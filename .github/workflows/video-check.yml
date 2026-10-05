@@ -6,13 +6,14 @@ on:
       - assets/courses.js
       - .github/workflows/video-check.yml
       - _checks/video.cjs
+      - _checks/video-batch.json
   workflow_dispatch:
 permissions:
   contents: read
 jobs:
   playback:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-node@v6
@@ -23,3 +24,8 @@ jobs:
       - run: node _checks/video.cjs
         env:
           CHECK_SHA: ${{ github.sha }}
+      - uses: actions/upload-artifact@v5
+        if: always()
+        with:
+          name: video-check-results
+          path: _checks/video-results.json

@@ -5,10 +5,17 @@ const { chromium } = require('playwright');
 const context = { window: {} };
 vm.runInNewContext(fs.readFileSync('assets/courses.js', 'utf8'), context);
 const latest = context.window.CPP_COURSES.filter(c => c.video).at(-1);
+const batch = fs.existsSync('_checks/video-batch.json') ? JSON.parse(fs.readFileSync('_checks/video-batch.json', 'utf8')) : {start: latest.number, end: latest.number};
+const targets = context.window.CPP_COURSES.filter(c => c.number >= batch.start && c.number <= batch.end);
+assert.equal(targets.length, batch.end - batch.start + 1);
+assert(targets.every(c => c.video));
 (async () => {
   const browser = await chromium.launch();
   try {
+    const results = [];
+    for (const latest of targets) {
     const page = await browser.newPage();
+    try {
     page.on('console', msg => console.log('browser:', msg.text()));
     const url = `https://qc0317.github.io/cornpup/lessons/lesson-${latest.id}.html?check=${process.env.CHECK_SHA}`;
     let deployed = false;
@@ -46,7 +53,15 @@ const latest = context.window.CPP_COURSES.filter(c => c.video).at(-1);
       return !v.seeking && v.readyState >= 2;
     }, null, {timeout: 30000});
     assert(result.src.includes(`lesson-${latest.id}.mp4`));
-    console.log(JSON.stringify({lesson: latest.number, status: 'passed', ...result}));
+    results.push({lesson: latest.number, status: 'passed', ...result});
+    console.log(JSON.stringify(results.at(-1)));
+    } catch (error) {
+      results.push({lesson: latest.number, status: 'failed', error: error.message});
+      console.error(JSON.stringify(results.at(-1)));
+    } finally { await page.close(); }
+    }
+    fs.writeFileSync('_checks/video-results.json', JSON.stringify(results, null, 2));
+    assert(results.every(r => r.status === 'passed'), 'Batch has failed lessons; inspect per-lesson results');
   } finally {
     await browser.close();
   }
