@@ -2,7 +2,7 @@ name: Teaching experience check
 on:
   push:
     branches: [main, 'codex/teaching-*']
-    paths: ['preview/**', 'lessons/lesson-0[2-5].html', 'assets/teaching.*', 'assets/challenges.js', '_checks/teaching.cjs', '.github/workflows/teaching-check.yml']
+    paths: ['preview/**', 'lessons/**', 'assets/teaching*', 'assets/interactive*', 'assets/challenges.js', '_checks/**', '.github/workflows/teaching-check.yml']
   workflow_dispatch:
 jobs:
   browser:
@@ -31,6 +31,9 @@ jobs:
           COURSE_PATH: lessons
       - run: node _checks/teaching-next.cjs
       - run: node _checks/teaching-next.cjs
+        env:
+          COURSE_PATH: lessons
+      - run: node _checks/teaching-11-15.cjs
         env:
           COURSE_PATH: lessons
       - uses: actions/upload-artifact@v5
