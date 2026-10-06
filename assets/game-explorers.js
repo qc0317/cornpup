@@ -135,3 +135,102 @@ if(n===73){const text=p.querySelector('pre').textContent,values=window.CPP_TEACH
 if(n===74){const block=make('div',String(residual));block.className='factor-core';board.append(block);for(const line of factorSteps.slice(-8))board.append(make('span',line));status.textContent=residual===1?'🧼 只剩1，所有质因子都属于2、3、5。再用原函数提交你的判断。':residual<=0?'请输入正整数后重新清理。':'选择能整除的2、3、5反复清理；如果留下其他因子就不是丑数。';scene.dataset.residual=residual;}
 if(n===75){const upper=Number(inputs()[0].value),target=Number.isInteger(upper)&&upper>=4&&upper<=100?upper-upper%2:10,right=target-pairLeft,good=prime(pairLeft)&&prime(right);for(const v of [pairLeft,right]){const piece=make('div',(prime(v)?'🟩 ':'🟥 ')+v);piece.className='prime-piece';board.append(piece);}status.textContent=pairLeft+' + '+right+' = '+target+'。'+(good?'两块都是素数，可以拼出这个偶数！':'还不能拼好：两块都必须是素数，1不可以。')+'这只是一例，不是对所有偶数的证明。';scene.dataset.pair=pairLeft+' '+right;scene.dataset.valid=String(good);}}
 p.addEventListener('click',()=>queueMicrotask(render));p.addEventListener('change',render);p.addEventListener('input',e=>{if(n===74&&e.target===inputs()[0]){residual=Number(e.target.value);factorSteps=[];}render();});render();})();
+
+/* Lessons 76–80: preserve the original experiment and turn its state into a playable scene. */
+(()=>{
+  'use strict';
+  const id=document.body.dataset.course,n=Number(id),p=document.getElementById('challenge');
+  if(!p||n<76||n>80)return;
+  const config=window.CPP_TEACHING?.[id]?.challenge;
+  if(!config)return;
+  const make=(tag,text)=>{const e=document.createElement(tag);if(text!==undefined)e.textContent=text;return e;};
+  const title={76:'🏆 名次侦探擂台',77:'🗺️ 折半寻宝地图',78:'📚 七人作业接力',79:'🚂 递归数字列车',80:'🏅 递归冠军接力'}[n];
+  const scene=make('div'),board=make('div'),status=make('p'),controls=make('div');
+  scene.className='play-scene';scene.setAttribute('aria-label','探索游戏画面');
+  board.className='visual-game-board late-game-board';status.className='late-game-status';status.setAttribute('aria-live','polite');controls.className='late-game-controls';
+  scene.append(make('strong',title),board,status,controls);p.querySelector('h2').textContent='动手探索 · '+title;p.querySelector('h2').after(scene);
+  const originalButton=name=>[...p.querySelectorAll('button')].find(b=>!scene.contains(b)&&b.textContent===name);
+  const addButton=(label,action)=>{const b=make('button',label);b.type='button';b.onclick=action;controls.append(b);return b;};
+  const output=()=>p.querySelector('pre').textContent;
+  const originalInput=()=>[...p.querySelectorAll('input')].filter(e=>!scene.contains(e));
+  let candidate=null,choiceFeedback='';
+  if(n===76)addButton('重新挑选候选人',()=>{candidate=null;choiceFeedback='';render();});
+  function binaryState(){
+    const target=Number(originalInput()[0].value);let low=1,high=100,found=false;
+    for(const match of output().matchAll(/，猜(\d+)/g)){
+      const mid=Number(match[1]);if(mid===target){low=high=mid;found=true;}else if(mid>target)high=mid-1;else low=mid+1;
+    }
+    return {target,low,high,found,mid:Math.floor((low+high)/2)};
+  }
+  if(n===77){
+    for(const [label,direction]of [['保留较小的一半','left'],['保留较大的一半','right'],['宝箱就在中点','found']]){
+      addButton(label,()=>{const s=binaryState();if(s.found){choiceFeedback='宝箱已找到，重新猜数可以开始新的地图。';render();return;}
+        if(!Number.isInteger(s.target)||s.target<1||s.target>100){choiceFeedback='先设置1–100之间的目标。';render();return;}
+        const correct=s.target<s.mid?'left':s.target>s.mid?'right':'found';
+        if(direction!==correct){choiceFeedback='这片区域不含目标。先比较目标与中点'+s.mid+'，地图保持不变。';render();return;}
+        choiceFeedback='方向正确！保留仍可能藏宝的区域。';originalButton('折半一步').click();
+      });
+    }
+    addButton('重新铺开寻宝地图',()=>originalButton('重新猜数').click());
+  }
+  if(n>=78){addButton(n===78?'传递下一步':n===79?'列车接力下一步':'冠军接力下一步',()=>{const run=originalButton('递归下一步');if(!run.disabled)run.click();});addButton('重新开始接力',()=>originalButton('重置递归').click());}
+  function render(){
+    board.replaceChildren();scene.classList.toggle('won',p.dataset.passed==='true');
+    const text=output();
+    if(n===76){
+      board.className='visual-game-board late-candidates';const target=Number(originalInput()[0].value),values=config.values;
+      values.forEach((value,index)=>{const card=make('button'),larger=candidate!==null&&value>candidate;card.type='button';card.className='late-candidate'+(candidate===value?' picked':'')+(larger?' larger':'');card.setAttribute('aria-label','检查候选值'+value);card.append(make('small','选手'+(index+1)),make('strong',String(value)),make('span',larger?'比候选更大':candidate===value?'当前候选':'点击检查'));card.onclick=()=>{candidate=value;const count=values.filter(x=>x>value).length;if(!Number.isInteger(target)||target<1||target>values.length)choiceFeedback='名次必须是1–10之间的整数。';else if(count!==target-1)choiceFeedback='还不是目标名次：有'+count+'个更大的数，所以它是第'+(count+1)+'大。';else{choiceFeedback='找到第'+target+'大的选手！更大元素恰好有'+count+'个。';originalButton('寻找第n大的数').click();}render();};board.append(card);});
+      const count=candidate===null?null:values.filter(x=>x>candidate).length;scene.dataset.candidate=candidate===null?'none':String(candidate);scene.dataset.larger=count===null?'none':String(count);
+      status.textContent=choiceFeedback||'目标第'+target+'大。点击候选人，蓝色卡片会指出谁比它大；第n大应有n−1个更大的数。';
+    }
+    if(n===77){
+      const s=binaryState();board.className='visual-game-board late-treasure-grid';
+      for(let k=1;k<=100;k++){const tile=make('span',s.found&&k===s.target?'💎':String(k));tile.className='late-map-tile'+(k<s.low||k>s.high?' discarded':' possible')+(k===s.mid?' midpoint':'');tile.setAttribute('aria-label','地图位置'+k+(k<s.low||k>s.high?' 已排除':''));board.append(tile);}
+      scene.dataset.low=String(s.low);scene.dataset.high=String(s.high);scene.dataset.mid=String(s.mid);scene.dataset.found=String(s.found);
+      status.textContent=s.found?'💎 找到位置'+s.target+'！数组下标是'+(s.target-1)+'，下标0同样有效。':(choiceFeedback?choiceFeedback+' ':'')+'剩余位置'+s.low+'–'+s.high+'，中点'+s.mid+'。选择应保留的半区；灰色位置已经排除。';
+    }
+    if(n===78){
+      board.className='visual-game-board late-homework-line';const entered=[...text.matchAll(/进入zuoye\((\d+)\)/g)].map(m=>Number(m[1])),returned=new Map();
+      if(text.includes('边界zuoye(7)返回1'))returned.set(7,1);for(const m of text.matchAll(/返回zuoye\((\d+)\)：\d+\+1=(\d+)/g))returned.set(Number(m[1]),Number(m[2]));
+      const active=returned.size?[...returned.keys()].at(-1):entered.at(-1);
+      for(let k=1;k<=7;k++){const card=make('div');card.className='late-homework-person'+(entered.includes(k)?' entered':'')+(returned.has(k)?' returned':'')+(active===k?' active':'');card.append(make('strong','🧒 第'+k+'位'),make('small','zuoye('+k+')'));const pile=make('div',returned.has(k)?'📒'.repeat(returned.get(k)):'等待传递');pile.className='late-book-pile';card.append(pile);board.append(card);}
+      scene.dataset.returned=String(returned.size);scene.dataset.books=String(returned.get(1)||0);status.textContent=returned.has(1)?'🏁 7本作业到达第一位同学！每次返回都添上自己的一本。':returned.size?'正在把作业传回来：亮边同学已收到下一位的数量，再加自己一本。':'先把请求传向第7位同学；还没到边界时，不能先拿到最终结果。';
+    }
+    if(n===79){
+      board.className='visual-game-board late-recursion-train';const entered=[...text.matchAll(/进入show\((\d+)\)/g)].map(m=>Number(m[1])),printed=[...text.matchAll(/返回阶段输出(\d+)/g)].map(m=>Number(m[1])),stack=make('div');stack.className='late-stack-strip';
+      for(let k=config.limit;k>=1;k--){const call=make('span','show('+k+')');call.className='late-call-card'+(entered.includes(k)?' entered':'')+(printed.includes(k)?' returned':'');stack.append(call);}board.append(stack);
+      const train=make('div');train.className='late-output-train';train.append(make('strong','🚂 输出车厢'));for(const value of printed){const car=make('span',String(value));car.className='late-train-car';train.append(car);}board.append(train);scene.dataset.output=printed.join(',');status.textContent=printed.length===config.limit?'列车按1、2、3、4、5出发！cout放在递归调用之后，返回时才输出；同样规则可扩展到100。':'先走向show(1)的边界，返回时才逐节挂上数字车厢。已输出'+printed.length+'节。';
+    }
+    if(n===80){
+      board.className='visual-game-board late-champion-board';const entered=[...text.matchAll(/进入max\(a,(\d+)\)/g)].map(m=>Number(m[1])),compared=[...text.matchAll(/返回第(\d+)层：比较previous=(-?\d+)与a\[\d+\]=(-?\d+)，返回(-?\d+)/g)],base=text.includes('边界返回a[1]');const used=compared.length?Number(compared.at(-1)[1]):base?1:0,winner=compared.length?Number(compared.at(-1)[4]):base?config.values[0]:null;
+      const stack=make('div');stack.className='late-stack-strip';for(let k=5;k>=1;k--){const call=make('span','前'+k+'个数');call.className='late-call-card'+(entered.includes(k)?' entered':'')+(base&&k<=used?' returned':'');stack.append(call);}board.append(stack);
+      const podium=make('div');podium.className='late-champion-podium';config.values.forEach((value,i)=>{const card=make('div');card.className='late-max-card'+(i<used?' compared':'')+(i<used&&value===winner?' champion':'');card.append(make('small','a['+(i+1)+']'),make('strong',String(value)),make('span',i<used&&value===winner?'🏆 当前冠军':i<used?'已比较':'等待返回'));podium.append(card);});board.append(podium);scene.dataset.compared=String(used);scene.dataset.champion=winner===null?'none':String(winner);status.textContent=used===5?'冠军42保留下来！末尾−5也必须参与比较，不能把数组当成已经排序。':base?'返回一层比较一个新选手，保存previous的结果，不重复求同一个子问题。':'先递归缩小到一个数，这位选手就是最小子问题的冠军。';
+    }
+  }
+  p.addEventListener('click',e=>{if(n===77&&e.target===originalButton('重新猜数'))choiceFeedback='';queueMicrotask(render);});
+  p.addEventListener('input',e=>{if(n===76&&e.target===originalInput()[0]){candidate=null;choiceFeedback='';}if(n===77&&e.target===originalInput()[0])choiceFeedback='';render();});render();
+})();
+
+/* Lessons 81–83: pointers and independent objects as concrete, manipulable containers. */
+(()=>{
+  'use strict';const n=Number(document.body.dataset.course),p=document.getElementById('challenge');if(!p||n<81||n>83)return;
+  const make=(tag,text)=>{const e=document.createElement(tag);if(text!==undefined)e.textContent=text;return e;},title={81:'🧭 指针地址快递站',82:'🗳️ 指针选票投递站',83:'🎨 双人艺术家工作室'}[n];
+  const scene=make('div'),board=make('div'),status=make('p'),controls=make('div');scene.className='play-scene';scene.setAttribute('aria-label','探索游戏画面');board.className='visual-game-board late-game-board';status.className='late-game-status';status.setAttribute('aria-live','polite');controls.className='late-game-controls';scene.append(make('strong',title),board,status,controls);p.querySelector('h2').textContent='动手探索 · '+title;p.querySelector('h2').after(scene);
+  const native=name=>[...p.querySelectorAll('button')].find(b=>!scene.contains(b)&&b.textContent===name),addButton=(label,action)=>{const b=make('button',label);b.type='button';b.onclick=action;controls.append(b);return b;},output=()=>p.querySelector('pre').textContent;
+  const objects=[{name:'nike',age:11},{name:'glair',age:12}];let selectedArtist=0,lastUpdate='';
+  if(n===81)addButton('将快递写入当前盒子',()=>native('执行*p赋值').click());
+  if(n===82){addButton('投递下一张选票',()=>{const run=native('读取下一张选票');if(!run.disabled)run.click();});addButton('清空票箱重新投递',()=>native('重置计票').click());}
+  if(n===83){for(let i=0;i<2;i++)addButton('给画家'+(i+1)+'加一岁',()=>{const age=p.querySelector('[aria-label="stud'+(i+1)+'年龄"]'),current=Number(age.value);if(!Number.isInteger(current)||current<0||current>=120){status.textContent='请先设置0–119的整数年龄，再加一岁。';return;}age.value=String(current+1);native('stud'+(i+1)+'.set').click();});addButton('展示两位画家的作品牌',()=>native('调用两个display').click());}
+  function render(){
+    board.replaceChildren();scene.classList.toggle('won',p.dataset.passed==='true');const text=output();
+    if(n===81){board.className='visual-game-board late-pointer-station';const target=text.match(/p=&([ab])/)?.[1]||'a',pointer=make('div','🧭 p → 地址'+target.toUpperCase());pointer.className='late-address-note';board.append(pointer);for(const name of ['a','b']){const value=text.match(new RegExp(name+'=(-?\\d+)'))?.[1]||'?',box=make('button');box.type='button';box.className='late-memory-box'+(target===name?' pointed':'');box.setAttribute('aria-label','指向变量'+name);box.append(make('small','教学地址'+name.toUpperCase()),make('strong',name+' = '+value),make('span',target===name?'⬆️ *p访问这里':'点击把p指向这里'));box.onclick=()=>native('p=&'+name).click();board.append(box);}scene.dataset.pointer=target;scene.dataset.a=text.match(/a=(-?\d+)/)?.[1]||'?';scene.dataset.b=text.match(/b=(-?\d+)/)?.[1]||'?';status.textContent='纸条保存地址，不是盒子里的数值。通过*p写入时，只有当前箭头指向的盒子改变。A、B是教学标签。';}
+    if(n===82){board.className='visual-game-board late-voting-station';const processed=Number(text.match(/已处理(\d+)/)?.[1]||0),votes=window.CPP_TEACHING?.[document.body.dataset.course]?.challenge.votes||[],counts=[...p.querySelectorAll('.array-cell strong')].map(e=>Number(e.textContent));const ballots=make('div');ballots.className='late-ballot-route';votes.forEach((vote,i)=>{const tile=make('span',(i<processed?'✓ ':'📩 ')+vote);tile.className='late-ballot'+(i<processed?' delivered':'');ballots.append(tile);});board.append(ballots);const bins=make('div');bins.className='late-vote-bins';for(let i=0;i<6;i++){const bin=make('div'),count=counts[i]||0;bin.className='late-vote-bin'+(processed>0&&votes[processed-1]===i?' receiving':'');const fill=make('div');fill.className='late-vote-fill';fill.style.height=String(count*24)+'px';bin.append(make('small',i===0?'0 · 弃权':i+'号候选人'),fill,make('strong',count+'票'),make('small','*(p+'+i+')'));bins.append(bin);}board.append(bins);scene.dataset.processed=String(processed);scene.dataset.counts=counts.join(',');status.textContent=processed===votes.length?'6张选票全部送达，0号箱保存弃权；每张票只让对应的一个计数增加。':'投递下一张'+(votes[processed]===0?'弃权票':'给'+votes[processed]+'号的票')+'，观察指针偏移和票箱柱形图一起变化。';}
+    if(n===83){board.className='visual-game-board late-artist-studio';const blueprint=make('div','artist 类：统一模板 → 两个独立对象');blueprint.className='late-class-blueprint';board.append(blueprint);const pair=make('div');pair.className='late-artist-pair';objects.forEach((obj,i)=>{const card=make('div');card.className='late-artist-card artist-'+(i+1)+(selectedArtist===i?' active':'');const canvas=make('button','🎨');canvas.type='button';canvas.className='late-artist-canvas';canvas.setAttribute('aria-label','查看画家'+(i+1)+'对象');canvas.onclick=()=>{selectedArtist=i;lastUpdate='当前查看stud'+(i+1)+'。另一位画家的资料保存在自己的对象里。';render();};card.append(make('small','stud'+(i+1)+' · 私有数据盒'),canvas,make('strong',obj.name),make('p',obj.age+'岁'),make('small','通过public set / display访问'));pair.append(card);});board.append(pair);scene.dataset.name1=objects[0].name;scene.dataset.name2=objects[1].name;scene.dataset.age1=String(objects[0].age);scene.dataset.age2=String(objects[1].age);status.textContent=lastUpdate||'同一artist模板造出两个作品牌。分别调用set后观察，修改一位画家不会让另一位跟着改变。';}
+  }
+  p.addEventListener('click',e=>{
+    if(n===83){const match=e.target.textContent.match(/^stud([12])\.set$/);if(match&&!scene.contains(e.target)){const i=Number(match[1])-1,name=p.querySelector('[aria-label="stud'+(i+1)+'姓名"]').value.trim(),ageInput=p.querySelector('[aria-label="stud'+(i+1)+'年龄"]'),age=Number(ageInput.value);if(name&&name.length<=20&&ageInput.value.trim()!==''&&Number.isInteger(age)&&age>=0&&age<=120){objects[i]={name,age};selectedArtist=i;lastUpdate='stud'+(i+1)+'已保存为'+name+'、'+age+'岁；另一位仍为'+objects[1-i].name+'、'+objects[1-i].age+'岁。';}}}
+    queueMicrotask(render);
+  });
+  // Typing is only a draft: artwork and address boxes change after a valid write/set.
+  p.addEventListener('input',()=>{if(n!==83)render();});render();
+})();
