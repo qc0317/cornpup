@@ -47,6 +47,7 @@ jobs:
       - run: node _checks/teaching-66-70.cjs
       - run: node _checks/teaching-71-75.cjs
       - run: node _checks/teaching-76-80.cjs
+      - run: node _checks/teaching-81-83.cjs
       - uses: actions/upload-artifact@v5
         if: always()
         with:
