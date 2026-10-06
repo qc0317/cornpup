@@ -75,6 +75,9 @@ jobs:
       - run: node _checks/teaching-76-80.cjs
         env:
           COURSE_PATH: lessons
+      - run: node _checks/teaching-81-83.cjs
+        env:
+          COURSE_PATH: lessons
       - uses: actions/upload-artifact@v5
         if: always()
         with:
