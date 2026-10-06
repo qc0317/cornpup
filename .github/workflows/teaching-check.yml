@@ -10,6 +10,10 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v6
+        with:
+          sparse-checkout: |
+            preview
+            _checks
       - uses: actions/setup-node@v6
         with:
           node-version: '22'
