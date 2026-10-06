@@ -1,0 +1,24 @@
+name: Teaching experience check
+on:
+  push:
+    branches: [main]
+    paths: ['preview/**', '_checks/teaching.cjs', '.github/workflows/teaching-check.yml']
+  workflow_dispatch:
+jobs:
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+      - run: npm install --no-save playwright@1.63.0
+      - run: npx playwright install --with-deps chromium
+      - run: python3 -m http.server 8080 --bind 127.0.0.1 > /tmp/course-server.log 2>&1 &
+      - run: node _checks/teaching.cjs
+      - uses: actions/upload-artifact@v5
+        if: always()
+        with:
+          name: teaching-check-results
+          path: teaching-check-results/
