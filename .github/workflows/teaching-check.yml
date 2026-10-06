@@ -7,7 +7,7 @@ on:
 jobs:
   browser:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@v6
         with:
@@ -49,6 +49,9 @@ jobs:
         env:
           COURSE_PATH: lessons
       - run: node _checks/teaching-36-40.cjs
+        env:
+          COURSE_PATH: lessons
+      - run: node _checks/teaching-41-45.cjs
         env:
           COURSE_PATH: lessons
       - uses: actions/upload-artifact@v5
