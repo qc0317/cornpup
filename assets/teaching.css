@@ -1,1 +1,3 @@
 main,aside,.panel{min-width:0}aside nav{max-width:100%}#challenge button,#quick-check button{margin:5px;max-width:100%;white-space:normal}#challenge input{max-width:100%;width:120px}#challenge pre{white-space:pre-wrap;overflow-wrap:anywhere}@media(max-width:900px){.layout{grid-template-columns:minmax(0,1fr)}}
+
+.quiz{border:0;padding:14px 0}.quiz legend{font-weight:700}.answer{display:block;width:100%;margin:8px 0;text-align:left}.answer.correct{background:#e4efcf;border-color:#75945f}#challenge label{display:block;margin:12px 0}#challenge input{font:inherit;padding:7px;border:1px solid var(--line);border-radius:8px}
