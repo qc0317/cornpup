@@ -1,0 +1,1 @@
+main,aside,.panel{min-width:0}aside nav{max-width:100%}#challenge button,#quick-check button{margin:5px;max-width:100%;white-space:normal}#challenge input{max-width:100%;width:120px}#challenge pre{white-space:pre-wrap;overflow-wrap:anywhere}@media(max-width:900px){.layout{grid-template-columns:minmax(0,1fr)}}

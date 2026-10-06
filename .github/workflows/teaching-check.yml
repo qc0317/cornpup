@@ -2,7 +2,7 @@ name: Teaching experience check
 on:
   push:
     branches: [main]
-    paths: ['preview/**', '_checks/teaching.cjs', '.github/workflows/teaching-check.yml']
+    paths: ['preview/**', 'lessons/lesson-0[2-5].html', 'assets/teaching.*', 'assets/challenges.js', '_checks/teaching.cjs', '.github/workflows/teaching-check.yml']
   workflow_dispatch:
 jobs:
   browser:
@@ -11,9 +11,14 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
+          sparse-checkout-cone-mode: false
           sparse-checkout: |
-            preview
-            _checks
+            /preview/
+            /_checks/
+            /lessons/
+            /assets/*.js
+            /assets/*.css
+            /assets/*.svg
       - uses: actions/setup-node@v6
         with:
           node-version: '22'
@@ -21,6 +26,9 @@ jobs:
       - run: npx playwright install --with-deps chromium
       - run: python3 -m http.server 8080 --bind 127.0.0.1 > /tmp/course-server.log 2>&1 &
       - run: node _checks/teaching.cjs
+      - run: node _checks/teaching.cjs
+        env:
+          COURSE_PATH: lessons
       - uses: actions/upload-artifact@v5
         if: always()
         with:
