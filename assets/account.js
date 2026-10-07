@@ -5,6 +5,7 @@
  const records=new Map(),dirty=new Map();let user=null,csrf='',loading=true,failed=false,timer=null,inflight=null,conflict=false;
  let status,controls;
  async function request(path,options={}){
+   if((path==='/login'||path==='/password')&&location.protocol!=='https:'&&!['127.0.0.1','localhost'].includes(location.hostname))throw new Error('请使用 HTTPS 安全入口登录');
    const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),12000);
    try{const r=await fetch(API+path,{credentials:'include',...options,signal:controller.signal,headers:{'Content-Type':'application/json',...(csrf?{'X-CSRF-Token':csrf}:{}),...options.headers}});
    const data=await r.json();if(!r.ok){const e=new Error(data.error||'服务暂时不可用');e.status=r.status;throw e;}return data;
