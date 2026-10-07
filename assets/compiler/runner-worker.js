@@ -40,9 +40,9 @@ var Module = (() => {
         var ret = fs.readFileSync(filename);
         return ret;
       };
-      readAsync = async (filename, binary2 = true) => {
+      readAsync = async (filename, binary = true) => {
         filename = isFileURI(filename) ? new URL(filename) : filename;
-        var ret = fs.readFileSync(filename, binary2 ? void 0 : "utf8");
+        var ret = fs.readFileSync(filename, binary ? void 0 : "utf8");
         return ret;
       };
       if (process.argv.length > 1) {
@@ -217,16 +217,16 @@ var Module = (() => {
     }
     async function instantiateArrayBuffer(binaryFile, imports) {
       try {
-        var binary2 = await getWasmBinary(binaryFile);
-        var instance = await WebAssembly.instantiate(binary2, imports);
+        var binary = await getWasmBinary(binaryFile);
+        var instance = await WebAssembly.instantiate(binary, imports);
         return instance;
       } catch (reason) {
         err(`failed to asynchronously prepare wasm: ${reason}`);
         abort(reason);
       }
     }
-    async function instantiateAsync(binary2, binaryFile, imports) {
-      if (!binary2 && typeof WebAssembly.instantiateStreaming == "function" && !isFileURI(binaryFile) && !ENVIRONMENT_IS_NODE) {
+    async function instantiateAsync(binary, binaryFile, imports) {
+      if (!binary && typeof WebAssembly.instantiateStreaming == "function" && !isFileURI(binaryFile) && !ENVIRONMENT_IS_NODE) {
         try {
           var response = fetch(binaryFile, { credentials: "same-origin" });
           var instantiationResult = await WebAssembly.instantiateStreaming(response, imports);
@@ -3121,9 +3121,9 @@ var Module2 = (() => {
         var ret = fs.readFileSync(filename);
         return ret;
       };
-      readAsync = async (filename, binary2 = true) => {
+      readAsync = async (filename, binary = true) => {
         filename = isFileURI(filename) ? new URL(filename) : filename;
-        var ret = fs.readFileSync(filename, binary2 ? void 0 : "utf8");
+        var ret = fs.readFileSync(filename, binary ? void 0 : "utf8");
         return ret;
       };
       if (process.argv.length > 1) {
@@ -3298,16 +3298,16 @@ var Module2 = (() => {
     }
     async function instantiateArrayBuffer(binaryFile, imports) {
       try {
-        var binary2 = await getWasmBinary(binaryFile);
-        var instance = await WebAssembly.instantiate(binary2, imports);
+        var binary = await getWasmBinary(binaryFile);
+        var instance = await WebAssembly.instantiate(binary, imports);
         return instance;
       } catch (reason) {
         err(`failed to asynchronously prepare wasm: ${reason}`);
         abort(reason);
       }
     }
-    async function instantiateAsync(binary2, binaryFile, imports) {
-      if (!binary2 && typeof WebAssembly.instantiateStreaming == "function" && !isFileURI(binaryFile) && !ENVIRONMENT_IS_NODE) {
+    async function instantiateAsync(binary, binaryFile, imports) {
+      if (!binary && typeof WebAssembly.instantiateStreaming == "function" && !isFileURI(binaryFile) && !ENVIRONMENT_IS_NODE) {
         try {
           var response = fetch(binaryFile, { credentials: "same-origin" });
           var instantiationResult = await WebAssembly.instantiateStreaming(response, imports);
@@ -6046,15 +6046,29 @@ var lld_default = Module2;
 // output/cpp-course-site/_build/practice/compiler.mjs
 var assetBase = "https://score.hiyamax.com/cppfun-compiler/";
 var wasmCache = /* @__PURE__ */ new Map();
-var binary = (name) => {
-  if (!wasmCache.has(name)) wasmCache.set(name, fetch(new URL(name, assetBase)).then((r) => {
-    if (!r.ok) throw Error("\u7F16\u8BD1\u5DE5\u5177\u4E0B\u8F7D\u5931\u8D25");
-    return r.arrayBuffer();
-  }).then((b) => new Uint8Array(b)));
+var compilerAsset = (name) => {
+  if (!wasmCache.has(name)) wasmCache.set(name, (async () => {
+    const url = new URL(name, assetBase).href;
+    let cache;
+    try {
+      cache = await caches.open("cppfun-compiler-v1");
+    } catch (e) {
+    }
+    let response = cache && await cache.match(url);
+    if (!response) {
+      response = await fetch(url);
+      if (!response.ok) throw Error("\u7F16\u8BD1\u5DE5\u5177\u4E0B\u8F7D\u5931\u8D25");
+      if (cache) try {
+        await cache.put(url, response.clone());
+      } catch (e) {
+      }
+    }
+    return new Uint8Array(await response.arrayBuffer());
+  })());
   return wasmCache.get(name);
 };
-var Clang = async (o) => clang_default({ ...o, wasmBinary: await binary("clang.wasm") });
-var LLD = async (o) => lld_default({ ...o, wasmBinary: await binary("lld.wasm") });
+var Clang = async (o) => clang_default({ ...o, wasmBinary: await compilerAsset("clang.wasm") });
+var LLD = async (o) => lld_default({ ...o, wasmBinary: await compilerAsset("lld.wasm") });
 function* tarContents(contents) {
   const data = new Uint8Array(contents);
   let offset = 0;
@@ -6131,6 +6145,7 @@ async function getCompilerInvocation(inputName, inputFile, flags) {
   };
 }
 async function compile({ source, fileName, flags, extraFiles }) {
+  await Promise.all([compilerAsset("clang.wasm"), compilerAsset("lld.wasm"), compilerAsset("sysroot.tar")]);
   let stderr = "";
   const clangPromise = Clang({
     thisProgram: "clang++",
@@ -6144,7 +6159,7 @@ async function compile({ source, fileName, flags, extraFiles }) {
       stderr += data + "\n";
     }
   });
-  const sysroot = await (await fetch(new URL("sysroot.tar", assetBase).href)).arrayBuffer();
+  const sysroot = (await compilerAsset("sysroot.tar")).buffer;
   const invocation = await getCompilerInvocation(fileName, source, flags);
   const clang = await clangPromise;
   clang.FS.writeFile(fileName, source);
@@ -6156,11 +6171,11 @@ async function compile({ source, fileName, flags, extraFiles }) {
       module: null
     };
   }
-  const binary2 = clang.FS.readFile(invocation.compilerArtifact, {
+  const binary = clang.FS.readFile(invocation.compilerArtifact, {
     encoding: "binary"
   });
   const lld = await lldPromise;
-  lld.FS.writeFile(invocation.compilerArtifact, binary2);
+  lld.FS.writeFile(invocation.compilerArtifact, binary);
   setUpSysroot(lld, sysroot, extraFiles);
   exitCode = lld.callMain(invocation.linkerArgs);
   if (exitCode !== 0) {
