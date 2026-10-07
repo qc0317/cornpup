@@ -87,7 +87,7 @@ try {
         $q=$db->prepare('SELECT password_hash FROM users WHERE id=?');$q->execute([$session['user_id']]);
         $old=(string)($data['oldPassword'] ?? '');$new=(string)($data['newPassword'] ?? '');
         if (!password_verify($old,$q->fetchColumn())) reply(401,['error'=>'当前密码不正确']);
-        if (strlen($new)<12 || strlen($new)>72) reply(400,['error'=>'新密码需要12–72个字符']);
+        if (strlen($new)<6 || strlen($new)>72) reply(400,['error'=>'新密码需要6–72个字符，支持纯数字']);
         $db->beginTransaction();
         $db->prepare('UPDATE users SET password_hash=? WHERE id=?')->execute([password_hash($new,PASSWORD_BCRYPT,['cost'=>12]),$session['user_id']]);
         $db->prepare('DELETE FROM sessions WHERE user_id=?')->execute([$session['user_id']]);
