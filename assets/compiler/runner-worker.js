@@ -7195,7 +7195,15 @@ self.onmessage = async ({ data }) => {
   try {
     if (typeof data.source !== "string" || data.source.length > 1e4) throw Error("\u7A0B\u5E8F\u8FC7\u957F\uFF0C\u8BF7\u7F29\u77ED\u540E\u518D\u8BD5\u3002");
     self.postMessage({ phase: "compile" });
-    const result = await compile({ source: data.source, fileName: "main.cpp", flags: ["-std=c++17", "-O0", "-fno-exceptions", "-Wl,--max-memory=67108864"] });
+    let checkedSource = data.source;
+    if (data.harness === "rps-sequence") {
+      const includes = [...checkedSource.matchAll(/^\s*#include[^\n]*$/gm)];
+      if (!includes.length) throw Error("\u8BF7\u4FDD\u7559\u7A0B\u5E8F\u7684\u5934\u6587\u4EF6\u58F0\u660E\u3002");
+      const last = includes[includes.length - 1], pos = last.index + last[0].length;
+      const helper = "\nnamespace std { inline int cppfun_check_rand(){static int i=0;return (i++)%3;} }\nusing std::cppfun_check_rand;\n#define rand cppfun_check_rand\n";
+      checkedSource = checkedSource.slice(0, pos) + helper + checkedSource.slice(pos);
+    }
+    const result = await compile({ source: checkedSource, fileName: "main.cpp", flags: ["-std=c++17", "-O0", "-fno-exceptions", "-Wl,--max-memory=67108864"] });
     if (!result.module) {
       self.postMessage({ ok: false, stage: "compile", diagnostic: result.compileOutput.slice(0, 12e3) });
       return;
