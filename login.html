@@ -1,0 +1,8 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>账号登录｜CPPFUN · HIYAMAX</title><link rel="icon" href="assets/favicon.svg"><link rel="stylesheet" href="assets/site.css?v=hiyamax-logo-1"><link rel="stylesheet" href="assets/account.css?v=account-1"></head>
+<body><header><div class="bar"><a class="brand" href="index.html"><b>CPPFUN</b><img class="hiyamax-logo" src="assets/hiyamax-logo.webp" alt="HIYAMAX"></a><a href="index.html">课程目录</a></div></header>
+<main class="login-panel"><h1 id="loginTitle">欢迎回来</h1><p class="muted">登录后，你的课程进度会保存在账号中，换设备也能继续学习。访客可以自由学习，完成度不会保存。</p>
+<form id="loginForm"><label>账号<input name="name" autocomplete="username" required maxlength="32" placeholder="Max 或 Scott"></label><label>密码<input name="password" type="password" autocomplete="current-password" required maxlength="72"></label><button type="submit">登录并继续学习</button></form>
+<form id="passwordForm" hidden><label>当前密码<input name="oldPassword" type="password" autocomplete="current-password" required maxlength="72"></label><label>新密码（12–72个字符）<input name="newPassword" type="password" autocomplete="new-password" required minlength="12" maxlength="72"></label><label>再次输入新密码<input name="confirmPassword" type="password" autocomplete="new-password" required minlength="12" maxlength="72"></label><button type="submit">修改密码</button><a href="index.html">继续学习 →</a></form>
+<p id="loginFeedback" role="status"></p><p class="muted">账号由管理员分配。如忘记密码，请联系管理员。</p></main>
+<script src="assets/account.js?v=account-1"></script><script src="assets/login.js?v=account-1"></script></body></html>
