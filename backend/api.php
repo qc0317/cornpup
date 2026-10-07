@@ -99,9 +99,10 @@ try {
         if ($key==='cpp-fun-lesson1-v1') {$course=1;$kind='first';}
         elseif (preg_match('/^cpp-course-(\d{2})$/',$key,$k)) {$course=(int)$k[1];$kind='reading';}
         elseif (preg_match('/^cpp-explore-(\d{2})-v1$/',$key,$k)) {$course=(int)$k[1];$kind='explore';}
+        elseif (preg_match('/^cpp-practice-(\d{2})-v1$/',$key,$k)) {$course=(int)$k[1];$kind='practice';}
         elseif (preg_match('/^cpp-understanding-(0[2-5])$/',$key,$k)) {$course=(int)$k[1];$kind='passed';}
         elseif (preg_match('/^cpp-challenge-([2-5])$/',$key,$k)) {$course=(int)$k[1];$kind='passed';}
-        if (!$course || $course>83 || ($kind==='explore' && $course<6) || ($kind==='reading' && $course<2)) reply(400,['error'=>'课程记录无效']);
+        if (!$course || $course>83 || ($kind==='explore' && $course<6) || (in_array($kind,['reading','practice'],true) && $course<2)) reply(400,['error'=>'课程记录无效']);
         $value=$data['value'] ?? null;
         $revision=$data['revision'] ?? null;
         if (!is_int($revision) || $revision<0 || (!is_string($value) && $value!==null)) reply(400,['error'=>'进度格式无效']);
@@ -112,6 +113,11 @@ try {
             if ($kind==='passed') $valid=$value==='passed';
             if ($kind==='explore') $valid=is_array($v)&&count($v)===2&&isset($v['challenge'],$v['quiz'])&&is_bool($v['challenge'])&&$bools($v['quiz'],2);
             if ($kind==='first') $valid=is_array($v)&&count($v)===4&&isset($v['read'],$v['robot'],$v['tools'],$v['quiz'])&&is_bool($v['read'])&&is_bool($v['robot'])&&$bools($v['tools'],3)&&$bools($v['quiz'],3);
+            if ($kind==='practice' && is_array($v) && count($v)===1 && isset($v['passed'])) {
+                $counts=json_decode(file_get_contents('/opt/cppfun-service/practice-counts.json'),true);
+                $n=$counts[sprintf('%02d',$course)] ?? 0;
+                $valid=$n>0 && $bools($v['passed'],$n);
+            }
             if (!$valid) reply(400,['error'=>'进度内容无效']);
         }
         $db->exec('BEGIN IMMEDIATE');

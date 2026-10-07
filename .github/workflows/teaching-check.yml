@@ -2,7 +2,7 @@ name: Teaching experience check
 on:
   push:
     branches: [main, 'codex/teaching-*']
-    paths: ['preview/**', 'lessons/**', 'assets/teaching*', 'assets/interactive*', 'assets/challenges.js', 'assets/account*', 'assets/login.js', 'login.html', '_checks/**', '.github/workflows/teaching-check.yml']
+    paths: ['preview/**', 'lessons/**', 'assets/teaching*', 'assets/interactive*', 'assets/challenges.js', 'assets/practice*', 'assets/cpp-runner.js', 'assets/catalog.js', 'assets/learning-progress.js', 'assets/compiler/**', 'assets/account*', 'assets/login.js', 'login.html', '_checks/**', '.github/workflows/teaching-check.yml']
   workflow_dispatch:
 jobs:
   browser:
