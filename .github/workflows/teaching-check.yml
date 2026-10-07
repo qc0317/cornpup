@@ -28,11 +28,11 @@ jobs:
       - run: npm install --no-save playwright@1.63.0
       - run: npx playwright install --with-deps chromium
       - run: python3 -m http.server 8080 --bind 127.0.0.1 > /tmp/course-server.log 2>&1 &
-      - run: node _checks/teaching.cjs
+      - run: node _checks/login-guard.cjs
+      - run: node _checks/preview-redirect.cjs
       - run: node _checks/teaching.cjs
         env:
           COURSE_PATH: lessons
-      - run: node _checks/teaching-next.cjs
       - run: node _checks/teaching-next.cjs
         env:
           COURSE_PATH: lessons
