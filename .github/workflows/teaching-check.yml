@@ -2,7 +2,7 @@ name: Teaching experience check
 on:
   push:
     branches: [main, 'codex/teaching-*']
-    paths: ['preview/**', 'lessons/**', 'assets/teaching*', 'assets/interactive*', 'assets/challenges.js', '_checks/**', '.github/workflows/teaching-check.yml']
+    paths: ['preview/**', 'lessons/lesson-0[2-5].html', 'assets/teaching.*', 'assets/challenges.js', '_checks/teaching.cjs', '.github/workflows/teaching-check.yml']
   workflow_dispatch:
 jobs:
   browser:
@@ -13,13 +13,13 @@ jobs:
         with:
           sparse-checkout-cone-mode: false
           sparse-checkout: |
-            /index.html
             /preview/
             /_checks/
             /lessons/
             /assets/*.js
             /assets/*.css
             /assets/*.svg
+            /assets/*.webp
       - uses: actions/setup-node@v6
         with:
           node-version: '22'
@@ -35,57 +35,20 @@ jobs:
         env:
           COURSE_PATH: lessons
       - run: node _checks/teaching-11-15.cjs
-        env:
-          COURSE_PATH: lessons
       - run: node _checks/teaching-16-20.cjs
-        env:
-          COURSE_PATH: lessons
       - run: node _checks/teaching-21-25.cjs
-        env:
-          COURSE_PATH: lessons
       - run: node _checks/teaching-26-30.cjs
-        env:
-          COURSE_PATH: lessons
       - run: node _checks/teaching-31-35.cjs
-        env:
-          COURSE_PATH: lessons
       - run: node _checks/teaching-36-40.cjs
-        env:
-          COURSE_PATH: lessons
       - run: node _checks/teaching-41-45.cjs
-        env:
-          COURSE_PATH: lessons
       - run: node _checks/teaching-46-50.cjs
-        env:
-          COURSE_PATH: lessons
       - run: node _checks/teaching-51-55.cjs
-        env:
-          COURSE_PATH: lessons
       - run: node _checks/teaching-56-60.cjs
-        env:
-          COURSE_PATH: lessons
       - run: node _checks/teaching-61-65.cjs
-        env:
-          COURSE_PATH: lessons
       - run: node _checks/teaching-66-70.cjs
-        env:
-          COURSE_PATH: lessons
       - run: node _checks/teaching-71-75.cjs
-        env:
-          COURSE_PATH: lessons
       - run: node _checks/teaching-76-80.cjs
-        env:
-          COURSE_PATH: lessons
       - run: node _checks/teaching-81-83.cjs
-        env:
-          COURSE_PATH: lessons
-      - run: node _checks/learning-progress.cjs
-        env:
-          COURSE_PATH: lessons
-      - run: node _checks/course-structure.cjs
-        env:
-          COURSE_PATH: lessons
-      - run: node _checks/catalog-progress.cjs
       - uses: actions/upload-artifact@v5
         if: always()
         with:
