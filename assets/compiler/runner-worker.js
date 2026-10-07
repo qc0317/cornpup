@@ -7211,7 +7211,20 @@ self.onmessage = async ({ data }) => {
         else stderr += text;
         if (stdout.length + stderr.length > 64e3) throw Error("\u7A0B\u5E8F\u8F93\u51FA\u8FC7\u591A\uFF0C\u8BF7\u68C0\u67E5\u5FAA\u73AF\u662F\u5426\u80FD\u7ED3\u675F\u3002");
       };
-      const fds = [new OpenFile(new File(new TextEncoder().encode(input))), new ConsoleStdout(capture("out", outDecoder)), new ConsoleStdout(capture("err", errDecoder))];
+      let answerSent = false;
+      const stdin = new OpenFile(new File(new TextEncoder().encode(typeof input === "string" ? input : "")));
+      if (input && typeof input === "object" && input.strategy === "addition-prompt") stdin.fd_read = function(size) {
+        if (!answerSent) {
+          const match = stdout.match(/(\d+)\+(\d+)=\s*$/);
+          if (!match) throw Error("\u7A0B\u5E8F\u9700\u8981\u5148\u8F93\u51FA\u52A0\u6CD5\u9898\u76EE\uFF0C\u4F8B\u598245+78=\uFF0C\u518D\u8BFB\u53D6\u7B54\u6848\u3002");
+          const a = Number(match[1]), b = Number(match[2]);
+          if (a < 10 || a > 99 || b < 10 || b > 99) throw Error("\u9898\u76EE\u4E2D\u7684\u4E24\u4E2A\u6570\u5FC5\u987B\u90FD\u662F\u4E24\u4F4D\u6570\u3002");
+          this.file.data = new TextEncoder().encode(String(a + b + (input.correct ? 0 : 1)) + "\n");
+          answerSent = true;
+        }
+        return OpenFile.prototype.fd_read.call(this, size);
+      };
+      const fds = [stdin, new ConsoleStdout(capture("out", outDecoder)), new ConsoleStdout(capture("err", errDecoder))];
       const wasi = new WASI(["main"], [], fds), instance = await WebAssembly.instantiate(result.module, { wasi_snapshot_preview1: wasi.wasiImport });
       const code = wasi.start(instance);
       stdout += outDecoder.decode();
