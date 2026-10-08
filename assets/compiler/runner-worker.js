@@ -6046,24 +6046,54 @@ var lld_default = Module2;
 // output/cpp-course-site/_build/practice/compiler.mjs
 var assetBase = "https://score.hiyamax.com/cppfun-compiler/";
 var wasmCache = /* @__PURE__ */ new Map();
+var assetSizes = { "clang.wasm": 42553880, "lld.wasm": 23202572, "sysroot.tar": 28620800 };
+var loadedAssets = /* @__PURE__ */ new Map();
+var lastReported = -1;
+var reportDownload = (name, loaded, cached) => {
+  loadedAssets.set(name, loaded);
+  const total = Object.values(assetSizes).reduce((a, b) => a + b, 0), received = [...loadedAssets.values()].reduce((a, b) => a + b, 0);
+  const percent = Math.min(100, Math.floor(received / total * 100));
+  if (percent !== lastReported) {
+    lastReported = percent;
+    self.postMessage({ phase: "download", percent, received, total, cached });
+  }
+};
+var cacheAttempt = (promise) => Promise.race([promise, new Promise((resolve) => setTimeout(() => resolve(null), 2e3))]).catch(() => null);
 var compilerAsset = (name) => {
   if (!wasmCache.has(name)) wasmCache.set(name, (async () => {
     const url = new URL(name, assetBase).href;
-    let cache;
-    try {
-      cache = await caches.open("cppfun-compiler-v1");
-    } catch (e) {
-    }
-    let response = cache && await cache.match(url);
+    const cache = typeof caches === "undefined" ? null : await cacheAttempt(caches.open("cppfun-compiler-v1"));
+    let response = cache ? await cacheAttempt(cache.match(url)) : null;
+    const cached = !!response;
     if (!response) {
       response = await fetch(url);
-      if (!response.ok) throw Error("\u7F16\u8BD1\u5DE5\u5177\u4E0B\u8F7D\u5931\u8D25");
-      if (cache) try {
-        await cache.put(url, response.clone());
-      } catch (e) {
-      }
+      if (!response.ok) throw Error("\u7F16\u8BD1\u5DE5\u5177\u4E0B\u8F7D\u5931\u8D25\uFF0C\u8BF7\u91CD\u8BD5\u3002");
     }
-    return new Uint8Array(await response.arrayBuffer());
+    const copy = !cached && cache ? response.clone() : null;
+    let bytes;
+    if (response.body) {
+      const reader = response.body.getReader(), chunks = [];
+      let size = 0;
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        chunks.push(value);
+        size += value.length;
+        reportDownload(name, size, cached);
+      }
+      bytes = new Uint8Array(size);
+      let offset = 0;
+      for (const chunk of chunks) {
+        bytes.set(chunk, offset);
+        offset += chunk.length;
+      }
+    } else {
+      bytes = new Uint8Array(await response.arrayBuffer());
+      reportDownload(name, bytes.length, cached);
+    }
+    if (copy) cache.put(url, copy).catch(() => {
+    });
+    return bytes;
   })());
   return wasmCache.get(name);
 };
@@ -6146,6 +6176,7 @@ async function getCompilerInvocation(inputName, inputFile, flags) {
 }
 async function compile({ source, fileName, flags, extraFiles }) {
   await Promise.all([compilerAsset("clang.wasm"), compilerAsset("lld.wasm"), compilerAsset("sysroot.tar")]);
+  self.postMessage({ phase: "compile" });
   let stderr = "";
   const clangPromise = Clang({
     thisProgram: "clang++",
@@ -7194,7 +7225,7 @@ self.onmessage = async ({ data }) => {
   busy = true;
   try {
     if (typeof data.source !== "string" || data.source.length > 1e4) throw Error("\u7A0B\u5E8F\u8FC7\u957F\uFF0C\u8BF7\u7F29\u77ED\u540E\u518D\u8BD5\u3002");
-    self.postMessage({ phase: "compile" });
+    self.postMessage({ phase: "loading" });
     let checkedSource = data.source;
     if (data.harness === "rps-sequence") {
       const includes = [...checkedSource.matchAll(/^\s*#include[^\n]*$/gm)];
