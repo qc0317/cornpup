@@ -7,7 +7,7 @@ Object.assign(window.CPP_PRACTICE,{
  '03':{version:1,questions:[
   {id:'q1',type:'choice',page:7,number:1,prompt:'计算机系统由（  ）组成。',options:['主板、显示器、键盘、鼠标','操作系统和应用软件','主机、输出设备、输入设备','硬件系统和软件系统'],answer:3,hint:'既要包括可以看见的设备，也要包括运行的软件。',explanation:'完整的计算机系统包括硬件系统和软件系统。'},
   {id:'q2',type:'output',page:7,number:2,prompt:'阅读程序，写出输出结果。',code:'#include <iostream>\nusing namespace std;\nint main()\n{\n    cout<<"99+1=";\n    cout<<100;\n    return 0;\n}',expected:'99+1=100',hint:'引号内的文字原样输出；两条 cout 之间没有换行。',explanation:'第一条输出 99+1=，第二条紧接着输出 100。'},
-  {id:'q3',type:'intro',page:7,number:3,prompt:'完善程序，做一个自我介绍。填写“大家好，”后面的介绍，可以按 Enter 分行介绍名字和兴趣，再运行看看。',code:'#include <iostream>\nusing namespace std;\nint main()\n{\n    cout<<"大家好，{{0}}";\n    return 0;\n}',fields:[{label:'你的自我介绍（按 Enter 换行，最多2000字）',multiline:true,maxLength:2000}],hint:'可以介绍名字、兴趣或你想做的编程作品。',explanation:'cout 可以把你的自我介绍输出到屏幕。介绍没有唯一答案，内容完整即可。'}
+  {"id": "q3", "type": "program", "page": 7, "number": 3, "prompt": "修改下面的完整 C++ 程序，做一个自我介绍。把 cout 中的文字改成你的名字和兴趣。点击“运行并检查”，运行结果只显示程序输出。想分行介绍时，可以另写一条 cout 并使用 endl。", "starter": "#include <iostream>\nusing namespace std;\nint main()\n{\n    cout << \"大家好，我是小小程序员\" << endl;\n    return 0;\n}", "fields": [{"label": "自我介绍的完整 C++ 程序（可直接修改，最多6000字）", "multiline": true, "maxLength": 6000}], "tests": [{"input": "", "output": ""}], "checker": "self-introduction", "hint": "例如 cout << \"大家好，我是Max\" << endl;。想换行，可下一行再写 cout << \"我喜欢编程\" << endl;。文字放在英文双引号里，每条语句以分号结束。", "explanation": "程序已正常运行，输出了问候和自我介绍。运行结果是 cout 输出的文字，而不是源代码。"}
  ]},
  '04':{version:1,questions:[
   {id:'q1',type:'choice',page:8,number:1,prompt:'下列（  ）是非法的标识符。',options:['3y','b5','H_1','p7y'],answer:0,hint:'标识符可以包含数字，但开头有要求。',explanation:'标识符不能以数字开头，所以 3y 不合法。'},
